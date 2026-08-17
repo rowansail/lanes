@@ -1,6 +1,6 @@
 # Lanes
 
-![The Lanes menu bar item, reading "Work" with a keep-awake timer](docs/img/menubar.png)
+![The Lanes menu bar item, reading "Work" with a keep-awake timer](docs/img/menu.png)
 
 Account lanes for Claude Code. Switch accounts from the macOS menu bar, and see at
 a glance which one you are in.
