@@ -12,6 +12,8 @@ Claude Code can only be logged into one account at a time. Lanes switches betwee
 them and keeps the active name permanently visible, because running the wrong
 account against a client's codebase is a bad afternoon.
 
+https://github.com/user-attachments/assets/65b5cedc-76e6-4901-9194-02478c74735b
+
 ## Install
 
 macOS 13 or newer, and Xcode Command Line Tools (`xcode-select --install`).
