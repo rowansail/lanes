@@ -1,0 +1,552 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>Lanes — account lanes for Claude Code</title>
+<meta name="description" content="Claude Code can only be logged into one account at a time. Lanes is a macOS menu bar app that switches between them and keeps the active one on screen — in the terminal, in Visual Studio Code, and in the Claude desktop app. Pin a project and every claude you start there uses its own account.">
+<meta name="color-scheme" content="light">
+<meta property="og:title" content="Lanes — account lanes for Claude Code">
+<meta property="og:description" content="Keep your Claude accounts in separate lanes. Switch from the macOS menu bar, see the active one at a glance, and pin a project so it always uses the right account.">
+<meta property="og:type" content="website">
+<link rel="stylesheet" href="fonts.css">
+<link rel="stylesheet" href="styles.css">
+</head>
+<body>
+
+<a class="skip" href="#main">Skip to content</a>
+
+<header class="nav">
+  <div class="wrap nav__inner">
+    <a class="nav__brand" href="#top">
+      <span class="nav__mark" aria-hidden="true">
+        <svg viewBox="0 0 20 20"><path d="M4 3.2v13.6M10 3.2v13.6M16 3.2v13.6"/></svg>
+      </span>
+      Lanes
+    </a>
+    <nav class="nav__links" aria-label="Primary">
+      <a href="#how">How it works</a>
+      <a href="#works">Where it works</a>
+      <a href="#features">Features</a>
+      <a href="#install">Install</a>
+      <a href="https://github.com/rowansail/lanes">GitHub</a>
+    </nav>
+  </div>
+</header>
+
+<main id="main">
+
+  <!-- ── Hero ──────────────────────────────────────────────────────────── -->
+  <section class="hero" id="top">
+    <div class="hero__split hero-wrap">
+      <div class="hero__copy">
+        <h1>Keep your Claude accounts in separate lanes.</h1>
+        <p class="hero__sub">
+          Claude Code can only be logged into one account at a time. Lanes switches
+          between them from the macOS menu bar and keeps the active one on screen, so
+          you never run a client's repo on your personal account by mistake.
+        </p>
+
+        <div class="hero__actions">
+          <a class="btn btn--primary" href="#install">Build it in three commands</a>
+          <a class="btn" href="https://github.com/rowansail/lanes">Read the source</a>
+        </div>
+        <p class="hero__meta">Free and open source · macOS 13+ · GPL-3.0-or-later</p>
+      </div>
+
+      <img class="hero__shot" src="img/menu.png" width="1500" height="1231"
+           alt="The Lanes menu open in the macOS menu bar: the active profile Work,
+                three profiles to switch to with their account addresses, and the
+                Keep Awake submenu">
+    </div>
+    <div class="wrap">
+      <!-- Sentence and picture side by side, and in that order in the markup: the
+           claim is what a reader needs first, the real menu is the evidence for it.
+           Stacked back to one column below the breakpoint, copy still first. -->
+
+      <!-- Product shot: a reconstruction of the real menu, not a screenshot. -->
+      <figure class="shot">
+        <div class="shot__frame" data-lane="work">
+          <div class="menubar">
+            <span class="menubar__spacer"></span>
+            <span class="menubar__item">
+              <span class="menubar__icon" id="barIcon"></span>
+              <span id="barLabel">Work</span>
+            </span>
+            <span class="menubar__clock">09:14</span>
+          </div>
+
+          <div class="shot__desk">
+
+          <!-- Switch, then confirm. Every line is a real string from the shell
+               hook, and it runs long enough to sit level with the menu beside it.
+               The pin demo is a better screenshot but a worse first impression:
+               nobody knows what a pin is yet. -->
+          <div class="term" aria-hidden="true">
+            <div class="term__bar"><span></span><span></span><span></span>
+              <p class="term__title">zsh</p></div>
+            <pre class="term__body"><code><span class="c">$</span> lane work
+<span class="o">now: work  -&gt;  ~/.claude-work</span>
+<span class="c">$</span> lane
+<span class="o">config dir : ~/.claude-work
+active     : work
+profiles   :
+    acme
+    personal
+  * work</span></code></pre>
+          </div>
+
+          <div class="menu" role="group" aria-label="Lanes menu">
+            <p class="menu__status">
+              Active: <span id="menuActive">Work</span> —
+              <span id="menuEmail">you@work.example</span><br>
+              <span class="menu__sub">Applies to terminals and apps you open next<br>
+              History, memory, settings and MCP servers are per profile</span>
+            </p>
+            <hr>
+            <p class="menu__label">Switch to</p>
+            <!-- Alphabetical by folder name, because that is how the app sorts
+                 them: Profile.discover() sorts by slug, and there is no notion of
+                 a favourite. -->
+            <ul class="lanes">
+              <li><button type="button" class="lane" data-slug="acme"
+                     data-label="Acme" data-email="not logged in" aria-pressed="false">
+                <span class="lane__tick" aria-hidden="true"></span>
+                <span class="lane__name">Acme</span>
+                <span class="lane__sub">not logged in</span>
+              </button></li>
+              <li><button type="button" class="lane" data-slug="personal"
+                     data-label="Personal" data-email="you@personal.example" aria-pressed="false">
+                <span class="lane__tick" aria-hidden="true"></span>
+                <span class="lane__name">Personal</span>
+                <span class="lane__sub">you@personal.example</span>
+              </button></li>
+              <li><button type="button" class="lane is-on" data-slug="work"
+                     data-label="Work" data-email="you@work.example" aria-pressed="true">
+                <span class="lane__tick" aria-hidden="true"></span>
+                <span class="lane__name">Work</span>
+                <span class="lane__sub">you@work.example</span>
+              </button></li>
+            </ul>
+            <hr>
+            <ul class="menu__rows">
+              <li>Open Claude App (<span id="menuOpenName">Work</span>)</li>
+              <li class="is-note">Only open from here — the Dock icon opens your original account</li>
+              <li>Keep Awake</li>
+            </ul>
+            <hr>
+            <ul class="menu__rows">
+              <li>Setup Assistant…</li>
+              <li>Check Setup…</li>
+              <li>Uninstall Lanes…</li>
+            </ul>
+          </div>
+
+          </div>
+        </div>
+        <figcaption>A reconstruction of the real menu. Click an account to switch
+        it; the addresses are made up. The terminal beside it is <code>lane</code>,
+        which comes with the app — <a href="#faq">nothing extra to install</a>.</figcaption>
+      </figure>
+    </div>
+  </section>
+
+  <!-- ── How it works ──────────────────────────────────────────────────── -->
+  <section class="section section--alt" id="how">
+    <div class="wrap">
+      <h2>How it works</h2>
+      <p class="section__lede">
+        Lanes doesn't log you in and out, and never holds a password. Three facts
+        are all of it.
+      </p>
+
+      <ol class="steps">
+        <li>
+          <h3>An account is just a folder</h3>
+          <p>Claude Code keeps one account's history, settings and MCP config in a
+          single directory. Give each account its own folder
+          (<code>~/.claude-work</code>, <code>~/.claude-personal</code>) and they sit
+          side by side. <strong>That folder is what Lanes calls a profile.</strong></p>
+        </li>
+        <li>
+          <h3>One variable picks the folder</h3>
+          <p>Claude Code reads <code>CLAUDE_CONFIG_DIR</code> to pick the folder.
+          That's the whole switch. It also finds the login in your Keychain by hashing
+          that path, so profiles can't reach each other's tokens and Lanes never
+          handles one.</p>
+        </li>
+        <li>
+          <h3>A shell hook applies it</h3>
+          <p>A program gets its environment at startup, and nothing can change it
+          from outside afterwards. So Lanes writes the active profile to one small
+          file, and a shell hook reads it whenever a shell starts, including the one in
+          your editor. zsh, bash and fish each get one.</p>
+          <p class="steps__note">That hook is also where the <code>lane</code> command
+          comes from — a shell function, not a second thing to install. The setup
+          wizard writes it; open a new terminal and it's there.</p>
+        </li>
+      </ol>
+
+      <div class="callout">
+        <h3>The one thing that catches everyone out</h3>
+        <p>A terminal that's <em>already open</em> doesn't follow along when you
+        switch. It can't: see fact three. Switching applies to what you start next,
+        so open a new tab.</p>
+      </div>
+    </div>
+  </section>
+
+  <!-- ── Pinning ───────────────────────────────────────────────────────── -->
+  <section class="section" id="pinning">
+    <div class="wrap split">
+      <div>
+        <h2>Pin a project so it can't use the wrong one</h2>
+        <p class="section__lede">
+          Clicking a profile in the menu changes it globally, which makes it exactly
+          as reliable as your memory. A pin takes memory out of it. Pin a repo to a
+          profile, and every <code>claude</code> you start in a terminal there uses
+          that account, whatever the menu bar says.
+        </p>
+        <p class="section__note">
+          The pin is one word in a <code>.lanes</code> file, found by walking up from
+          wherever you are, so the repo root covers everything below it. Commit it
+          and a colleague running Lanes gets the same pin. Someone without a profile
+          of that name gets a warning rather than the wrong account.
+        </p>
+      </div>
+      <pre class="code"><code><span class="c">$</span> cd ~/clients/acme
+<span class="c">$</span> lane lock acme
+<span class="o">pinned ~/clients/acme to 'acme'
+Commit .lanes to share the pin, or add it to .git/info/exclude to keep it yours.</span>
+<span class="c">$</span> claude
+<span class="o">lanes: ~/clients/acme is pinned to 'acme' — using it for this command.</span></code></pre>
+    </div>
+  </section>
+
+  <!-- ── Where it works ────────────────────────────────────────────────── -->
+  <section class="section section--alt" id="works">
+    <div class="wrap">
+      <h2>Three places you run Claude. All three covered.</h2>
+      <p class="section__lede">
+        A terminal, your editor's extension, and the desktop app. They don't pick
+        the account the same way, so here's what happens in each, including where
+        Lanes can't help.
+      </p>
+
+      <div class="grid">
+        <article class="card">
+          <!-- Drawn here rather than borrowed. Anthropic's and Microsoft's marks
+               are both off limits for a third party promoting its own tool, so
+               these are generic glyphs: a prompt, an editor, an app window. -->
+          <span class="card__mark" aria-hidden="true">
+            <svg viewBox="0 0 20 20"><path d="M4.5 6.5 8 10l-3.5 3.5M10.5 13.5h5"/></svg>
+          </span>
+          <h3>Claude Code in a terminal</h3>
+          <p>The hook sets <code>CLAUDE_CONFIG_DIR</code> in every new shell, and a
+          pinned project overrides it.</p>
+          <p class="card__note">An open terminal keeps the account it started with.
+          Open a new tab.</p>
+        </article>
+
+        <article class="card">
+          <span class="card__mark" aria-hidden="true">
+            <svg viewBox="0 0 20 20"><rect x="2.5" y="4" width="15" height="12" rx="1.8"/><path d="M7.5 4v12"/></svg>
+          </span>
+          <h3>Claude Code in Visual Studio Code</h3>
+          <p>The extension runs the same CLI, so it lands in the same account, taken
+          from the hook when the editor launches. Cursor, VSCodium and Windsurf too.</p>
+          <p class="card__note">An editor holds its account until you quit it
+          completely — reloading the window isn't enough — and pins don't reach the
+          side panel. <code>"claudeCode.useTerminal": true</code> fixes both.</p>
+        </article>
+
+        <article class="card">
+          <span class="card__mark" aria-hidden="true">
+            <svg viewBox="0 0 20 20"><rect x="2.5" y="4" width="15" height="12" rx="1.8"/><path d="M2.5 7.5h15"/></svg>
+          </span>
+          <h3>The Claude desktop app</h3>
+          <p>A different login: Electron cookies, which
+          <code>CLAUDE_CONFIG_DIR</code> can't touch. Each profile gets its own data
+          directory, so two accounts can be open at once.</p>
+          <p class="card__note">Open it from the Lanes menu. The Dock icon opens
+          your original account, not a profile.</p>
+        </article>
+      </div>
+
+      <div class="callout">
+        <h3>The desktop app is the one you have to open from the menu</h3>
+        <p>Its account lives in cookies, which come from the data directory it was
+        launched with. That's a launch argument, and a Dock icon has none, so the Dock
+        always opens the account you had before Lanes. For a profile, use
+        <code>Open Claude App (Work)</code> in the menu, or run
+        <code>lane app</code>.</p>
+      </div>
+    </div>
+  </section>
+
+  <!-- ── Features ──────────────────────────────────────────────────────── -->
+  <section class="section" id="features">
+    <div class="wrap">
+      <h2>What's in it</h2>
+      <div class="grid">
+        <article class="card">
+          <h3>Menu bar switching</h3>
+          <p>Every <code>~/.claude-*</code> folder is a profile. No registry, no config
+          file to keep in sync. Make a folder and the menu picks it up within five
+          seconds.</p>
+        </article>
+        <article class="card">
+          <h3>Project pins</h3>
+          <p>One <code>.lanes</code> file ties a repo to one account, and the hook
+          honours it whatever is active. A pin should outrank a menu click from last
+          Tuesday.</p>
+        </article>
+        <article class="card">
+          <h3>Keep awake</h3>
+          <p>Hold a power assertion indefinitely, on a timer, or for exactly as long
+          as a <code>claude</code> process is alive, so a long run doesn't die when the
+          Mac sleeps.</p>
+        </article>
+        <article class="card">
+          <h3>One report when something's off</h3>
+          <p><code>Check Setup…</code> in the menu, or <code>./doctor.sh</code> from
+          your shell. It names the file and line overriding the hook, and any editor
+          window that has drifted onto another account.</p>
+        </article>
+        <article class="card">
+          <h3>A setup wizard that shows its work</h3>
+          <p>What it found, what you get to choose, then a numbered plan, all before
+          it changes anything. It turns the Claude install you already have into your
+          first profile.</p>
+        </article>
+        <article class="card">
+          <h3>It never touches a credential</h3>
+          <p>Switching is a change of path, so tokens stay where Claude Code put
+          them. Lanes only ever asks the Keychain whether an item exists — never for
+          what is in it.</p>
+        </article>
+      </div>
+    </div>
+  </section>
+
+  <!-- ── Install ───────────────────────────────────────────────────────── -->
+  <section class="section section--alt" id="install">
+    <div class="wrap install">
+      <h2>Install</h2>
+      <p class="section__lede">
+        Lanes ships as source, and that's the whole install. <code>build.sh</code>
+        compiles it, signs it ad-hoc, puts it in <code>/Applications</code> and starts
+        it.
+      </p>
+      <pre class="code"><code><span class="c">$</span> git clone https://github.com/rowansail/lanes
+<span class="c">$</span> cd lanes
+<span class="c">$</span> ./build.sh</code></pre>
+      <p class="section__note">
+        <strong>The Claude install you already have becomes your first profile.</strong>
+        On first launch a wizard offers to move <code>~/.claude</code> to
+        <code>~/.claude-original</code> and leave a symlink behind. Same history, same
+        projects, nothing deleted, and it shows you the plan first. Keep the name:
+        <code>original</code> is the only word that will still tell you, a year from
+        now, which folder was there before Lanes.
+      </p>
+      <p class="section__note">
+        Then log in once per profile: restart your shell with
+        <code>exec zsh</code>, then run <code>claude auth login</code>. The folder
+        moved, so the Keychain name moved with it, and Lanes won't move a token for
+        you.
+      </p>
+      <p class="section__note">
+        <strong>The <code>lane</code> command comes with it.</strong> There's no
+        second install and no package to add: the wizard writes a hook into your
+        shell config, and that hook defines <code>lane</code> along with everything
+        else. It's a shell function rather than a binary, so it lives in interactive
+        shells only — <code>which lane</code> finds nothing, and a script gets
+        <code>CLAUDE_CONFIG_DIR</code> from the hook instead, which is the half that
+        does the switching.
+      </p>
+      <dl class="reqs">
+        <dt>Requires</dt>
+        <dd>macOS 13 Ventura or newer · Xcode Command Line Tools · zsh, bash or
+        fish</dd>
+        <dt>Why source only</dt>
+        <dd>Handing out a binary would mean notarisation and a paid Apple Developer
+        account. Building it yourself means the code you audited is the code you ran,
+        which matters for a tool that edits your shell config.</dd>
+      </dl>
+    </div>
+  </section>
+
+  <!-- ── FAQ ───────────────────────────────────────────────────────────── -->
+  <section class="section" id="faq">
+    <div class="wrap">
+      <h2>Common questions</h2>
+      <div class="faq">
+        <details>
+          <summary>Do I have to install the <code>lane</code> command separately?</summary>
+          <p>No. It arrives with the app. The setup wizard writes a hook into your
+          shell config — <code>~/.zshenv</code>, <code>~/.bash_profile</code> or
+          <code>~/.config/fish/config.fish</code> — and that hook is what sets
+          <code>CLAUDE_CONFIG_DIR</code> <em>and</em> defines <code>lane</code>. Open a
+          new terminal after setup and it's there. If it isn't, the hook isn't
+          installed, which the app notices by itself and offers to fix from the menu.
+          Because it's a shell function and not a binary on <code>$PATH</code>,
+          <code>which lane</code> comes up empty and it doesn't exist inside scripts;
+          scripts still get <code>CLAUDE_CONFIG_DIR</code>, which is the part that
+          switches the account.</p>
+        </details>
+        <details>
+          <summary>Does Claude Code in Visual Studio Code work?</summary>
+          <p>Yes, with nothing to configure. The extension runs the same CLI, so
+          <code>CLAUDE_CONFIG_DIR</code> picks its account and profiles stay just as
+          separate. Two things follow from it starting the CLI directly, with no shell
+          in between. The account is fixed when the <em>editor</em> launches, not when
+          the window opens — the extension host inherits its environment from the
+          editor's main process. <strong><code>Developer: Reload Window</code> does not
+          change it:</strong> reloading starts a fresh extension host, but a fresh child
+          of an unchanged parent inherits the unchanged environment. Quit the editor
+          entirely and open it again. And <code>.lanes</code> pins don't reach the side
+          panel, because a pin is read by the shell function and no shell runs. Setting
+          <code>"claudeCode.useTerminal": true</code> fixes both at once — the
+          integrated terminal is a real shell, so every new terminal picks up the
+          current account with nothing to reload.
+          <code>Check Setup…</code> lists every open editor and the account it's on.</p>
+        </details>
+        <details>
+          <summary>Does this work with the Claude desktop app?</summary>
+          <p>Yes, with one thing to remember. It's Electron and logs in with session
+          cookies, so <code>CLAUDE_CONFIG_DIR</code> does nothing there. Lanes gives
+          each profile its own data directory instead: one login per profile, after
+          which two accounts can be open side by side. Launch it from the Lanes menu or
+          with <code>lane app</code>, though. A data directory is a launch argument and
+          the Dock icon has none, so the Dock opens your original account.</p>
+        </details>
+        <details>
+          <summary>Why is my first profile called "original"?</summary>
+          <p>Because that's what it is: the Claude install you already had, moved
+          from <code>~/.claude</code> to <code>~/.claude-original</code> with a symlink
+          left behind. Same history, same projects, nothing taken away. Rename it if
+          you like, but it earns its keep the day you're looking at three folders and
+          want to know which was there first.</p>
+        </details>
+        <details>
+          <summary>Nothing changed after I switched</summary>
+          <p>The terminal you're in keeps the old value until you close it. Run
+          <code>exec zsh</code>, or open a new tab. An editor is the same idea one level
+          up: quit it completely and reopen, because reloading the window doesn't
+          replace the process that holds the value.</p>
+        </details>
+        <details>
+          <summary><code>echo $CLAUDE_CONFIG_DIR</code> is empty</summary>
+          <p>The hook isn't installed. The app notices that by itself and offers to
+          fix it from the menu.</p>
+        </details>
+        <details>
+          <summary>I keep ending up in the same account</summary>
+          <p>Something sets <code>CLAUDE_CONFIG_DIR</code> after the hook does: an
+          <code>export</code> in <code>.zshrc</code>, or
+          <code>terminal.integrated.env.osx</code> in your editor settings. Run
+          <code>./doctor.sh</code> and it names the file and the line.</p>
+        </details>
+        <details>
+          <summary>Will this break when Claude Code updates?</summary>
+          <p>It might. <code>CLAUDE_CONFIG_DIR</code> and the Keychain naming scheme
+          are undocumented, established by watching how Claude Code behaves rather than
+          from a specification, and Anthropic can change either in any release. If
+          profiles stop staying separate after an update, suspect that first.
+          <code>Check Setup…</code> reports the Claude Code version for this reason,
+          and checks whether the Keychain still looks the way Lanes expects.</p>
+        </details>
+      </div>
+    </div>
+  </section>
+
+  <!-- ── Closing CTA ───────────────────────────────────────────────────── -->
+  <section class="cta">
+    <div class="wrap">
+      <h2>Put the account where you can see it.</h2>
+      <div class="hero__actions">
+        <a class="btn btn--primary" href="#install">Build it in three commands</a>
+        <a class="btn" href="https://github.com/rowansail/lanes">Read the source</a>
+      </div>
+    </div>
+  </section>
+
+</main>
+
+<footer class="footer">
+  <div class="wrap footer__inner">
+    <div>
+      <p class="footer__brand">Lanes</p>
+      <p class="footer__note">Account lanes for Claude Code. GPL-3.0-or-later.</p>
+    </div>
+    <nav class="footer__links" aria-label="Footer">
+      <a href="https://github.com/rowansail/lanes">Source</a>
+      <a href="https://github.com/rowansail/lanes/blob/main/SECURITY.md">Security</a>
+      <a href="https://github.com/rowansail/lanes/blob/main/CONTRIBUTING.md">Contributing</a>
+    </nav>
+  </div>
+  <div class="wrap">
+    <p class="footer__legal">
+      Not affiliated with, endorsed by, or sponsored by Anthropic. Claude is a
+      trademark of Anthropic, PBC.
+    </p>
+  </div>
+</footer>
+
+<script>
+  (function () {
+    var ICONS = {
+      work: '<svg viewBox="0 0 16 16"><path d="M6 2.6h4a1.4 1.4 0 0 1 1.4 1.4v.6H13A1.6 1.6 0 0 1 14.6 6.2v5.2A1.6 1.6 0 0 1 13 13H3a1.6 1.6 0 0 1-1.6-1.6V6.2A1.6 1.6 0 0 1 3 4.6h1.6V4A1.4 1.4 0 0 1 6 2.6Zm0 1.2a.3.3 0 0 0-.3.3v.5h4.6V4a.3.3 0 0 0-.3-.3Z"/></svg>',
+      personal: '<svg viewBox="0 0 16 16"><path d="M8 1.9 1.5 7.1a.6.6 0 0 0 .38 1.07h.87v4.86c0 .59.48 1.07 1.07 1.07h2.3V10.3h3.76v3.8h2.3c.59 0 1.07-.48 1.07-1.07V8.17h.87A.6.6 0 0 0 14.5 7.1Z"/></svg>',
+      acme: '<svg viewBox="0 0 16 16"><path d="M8 1.4a6.6 6.6 0 1 0 0 13.2A6.6 6.6 0 0 0 8 1.4Zm0 2.9a2.2 2.2 0 1 1 0 4.4 2.2 2.2 0 0 1 0-4.4Zm0 9.1a5.3 5.3 0 0 1-3.6-1.42c.5-1.15 1.95-1.94 3.6-1.94s3.1.79 3.6 1.94A5.3 5.3 0 0 1 8 13.4Z"/></svg>'
+    };
+
+    var frame   = document.querySelector('.shot__frame');
+    var els = {
+      icon:  document.getElementById('barIcon'),
+      label: document.getElementById('barLabel'),
+      act:   document.getElementById('menuActive'),
+      mail:  document.getElementById('menuEmail'),
+      open:  document.getElementById('menuOpenName')
+    };
+    var lanes = Array.prototype.slice.call(document.querySelectorAll('.lane'));
+    var reduced = window.matchMedia('(prefers-reduced-motion: reduce)');
+    var timer = null;
+
+    els.icon.innerHTML = ICONS.work;
+
+    function commit(btn) {
+      els.label.textContent = btn.dataset.label;
+      els.act.textContent   = btn.dataset.label;
+      els.mail.textContent  = btn.dataset.email;
+      els.open.textContent   = btn.dataset.label;
+      els.icon.innerHTML     = ICONS[btn.dataset.slug] || ICONS.acme;
+    }
+
+    lanes.forEach(function (btn) {
+      btn.addEventListener('click', function () {
+        if (frame.dataset.lane === btn.dataset.slug) return;
+        frame.dataset.lane = btn.dataset.slug;
+
+        lanes.forEach(function (l) {
+          var on = l === btn;
+          l.classList.toggle('is-on', on);
+          l.setAttribute('aria-pressed', on ? 'true' : 'false');
+        });
+
+        if (reduced.matches) { commit(btn); return; }
+
+        // Blur the old value out and let the new one resolve in, so the swap
+        // reads as one thing changing rather than two strings crossfading.
+        clearTimeout(timer);
+        frame.classList.add('is-swapping');
+        timer = setTimeout(function () {
+          commit(btn);
+          frame.classList.remove('is-swapping');
+        }, 110);
+      });
+    });
+  })();
+</script>
+</body>
+</html>

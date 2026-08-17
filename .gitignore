@@ -1,0 +1,42 @@
+# SwiftPM build products. .build/ reaches several hundred megabytes; it is the
+# single most important line in this file.
+.build/
+.swiftpm/
+
+# No dependencies, so there is nothing to pin. If a dependency is ever added this
+# line should be deleted — for an application, a committed Package.resolved is
+# what makes a build reproducible.
+Package.resolved
+
+# Output of ./build.sh
+build/
+
+# macOS
+.DS_Store
+
+# Editors
+.vscode/
+*.xcodeproj
+*.xcworkspace
+
+# Coding-agent configuration and caches. Local tooling, recreated on demand, and
+# nothing a reader of this project needs — several of these write machine-specific
+# paths and personal settings, which is reason enough on its own.
+.claude/
+.codex/
+.cursor/
+.impeccable/
+
+# Local archives of earlier layouts. Kept on disk deliberately, not committed:
+# git history is the right place for old versions.
+Archief*.zip
+
+# Local demo mode for screenshots. Deliberately never committed: it patches a copy
+# of the source to point at a fake home full of invented accounts, which is a
+# development convenience and not part of the product. See dev/README.md.
+dev/
+
+# Raw capture masters — full-resolution stills and screen recordings. The versions
+# that ship live in docs/img/, resized; the video is hosted by GitHub rather than
+# committed, because a repository is a bad place to put megabytes of MP4.
+docs/marketing/
