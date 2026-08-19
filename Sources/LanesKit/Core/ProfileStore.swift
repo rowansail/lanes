@@ -34,6 +34,17 @@ public final class ProfileStore: ObservableObject {
     @Published public private(set) var setupStatus: Setup.Status
     @Published public private(set) var lastError: String?
 
+    /// Do all lanes skip Claude Code's Bypass Permissions warning?
+    ///
+    /// Read out of the files rather than remembered in `UserDefaults`, which is the
+    /// difference between a checkmark that describes the machine and one that describes
+    /// what the app did last. Edit a `settings.json` by hand and the menu simply agrees
+    /// with you at the next refresh; a remembered preference would sit there being wrong.
+    ///
+    /// All, not any: a half-applied setting is not on, because the lane it is missing
+    /// from is exactly the one that will interrupt you.
+    @Published public private(set) var skipsBypassWarning = false
+
     /// Where everything lives. Injected rather than derived, so tests can point the
     /// whole store at a temporary directory.
     public let locations: Locations
@@ -113,6 +124,12 @@ public final class ProfileStore: ObservableObject {
         let status = Setup.status(at: locations, profileSlugs: found.map(\.slug))
         if status != setupStatus { setupStatus = status }
 
+        // One small JSON file per profile, on the five-second tick. Cheap enough to sit
+        // here — unlike `claudeInstall`, which is cached precisely because it is not.
+        let skips = !found.isEmpty
+            && found.allSatisfy { ClaudeSettings.skipsBypassWarning($0) }
+        if skips != skipsBypassWarning { skipsBypassWarning = skips }
+
         considerAskingForAttention()
     }
 
@@ -149,6 +166,12 @@ public final class ProfileStore: ObservableObject {
     public func createProfileAskingForName() {
         lastError = nil
 
+        // Read before the new folder exists, because `skipsBypassWarning` is "all lanes"
+        // and a lane created a moment from now has an empty settings.json. Asked
+        // afterwards the answer would always be no, and every new lane would start by
+        // showing the warning the user switched off.
+        let inheritBypassSetting = skipsBypassWarning
+
         let placeholder = ProfileStore.suggestedSlugs
             .first { Profile.validate($0, in: locations) == nil } ?? "acme"
         var message = "Lowercase letters, digits and hyphens. It becomes the folder "
@@ -170,7 +193,11 @@ public final class ProfileStore: ObservableObject {
             }
 
             do {
-                _ = try Setup.createProfile(slug: raw, at: locations)
+                let directory = try Setup.createProfile(slug: raw, at: locations)
+                if inheritBypassSetting {
+                    try ClaudeSettings.setSkipsBypassWarning(
+                        true, for: Profile(slug: raw, directory: directory))
+                }
             } catch {
                 report(error)
             }
@@ -243,6 +270,37 @@ public final class ProfileStore: ObservableObject {
     }
 
     private static let autoCheckKey = "checkSetupAutomatically"
+
+    // MARK: - The bypass warning
+
+    /// Writes the accepted-warning flag into every lane, or takes it back out.
+    ///
+    /// Every lane and not just the active one, because the entire complaint this
+    /// answers is that the dialog comes back when you switch. Doing half of them would
+    /// leave exactly the behaviour the setting is meant to remove.
+    ///
+    /// A profile whose `settings.json` cannot be parsed is skipped and named. One
+    /// hand-edited file with a comment in it must not stop the other three from being
+    /// written — and it must not pass silently either, because the menu will then show
+    /// the setting as off with no explanation of which lane is holding out.
+    public func setSkipsBypassWarning(_ enabled: Bool) {
+        lastError = nil
+
+        var failures: [String] = []
+        for profile in profiles {
+            do {
+                try ClaudeSettings.setSkipsBypassWarning(enabled, for: profile)
+            } catch {
+                failures.append("\(profile.displayName): \(error.localizedDescription)")
+            }
+        }
+
+        if !failures.isEmpty {
+            lastError = failures.joined(separator: "  ")
+            NSSound.beep()
+        }
+        refresh()
+    }
 
     /// Have we already asked about the problem currently on screen?
     ///

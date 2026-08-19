@@ -108,6 +108,25 @@ bar while it is on.
 It is an IOKit power assertion, the same thing `caffeinate` uses, and it deliberately
 does not survive a restart.
 
+## Skip Bypass Permissions Warning
+
+Claude Code records that you have read the Bypass Permissions warning per config
+directory. Lanes gives you several of those, so the dialog comes back once per lane,
+and again for every lane you make afterwards.
+
+Menu → `Skip Bypass Permissions Warning` writes
+`"skipDangerousModePermissionPrompt": true` into every lane's `settings.json` —
+the same key, in the same file, that clicking Accept writes. New lanes inherit it.
+Switching it off removes the key again.
+
+Everything else in that file is left alone, and a `settings.json` that is not plain
+JSON — comments, a trailing comma — is reported and not written rather than
+reformatted. It is the only thing Lanes ever writes inside a profile.
+
+This covers that one dialog and nothing else. It does not touch per-tool permission
+prompts, and it is unrelated to the Claude-in-Chrome prompts asking to run JavaScript
+on a site, which the extension grants per domain on its own.
+
 ## When something is wrong
 
 ```bash

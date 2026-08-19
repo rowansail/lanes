@@ -224,6 +224,23 @@ struct MenuView: View {
             Text("Check Setup Automatically")
         }
 
+        // The one setting here that is not the app's own. Claude Code records "I have
+        // read the Bypass Permissions warning" per config directory, so splitting one
+        // install into lanes means being asked once per lane, forever. Hidden when
+        // there are no profiles, where it would have nothing to write to.
+        if !store.profiles.isEmpty {
+            Toggle(isOn: Binding(
+                get: { store.skipsBypassWarning },
+                set: { store.setSkipsBypassWarning($0) }
+            )) {
+                Text("Skip Bypass Permissions Warning")
+            }
+
+            // Says where it goes, because this is the one switch in the menu that edits
+            // a file belonging to another program.
+            Text("Pre-accepts it in every lane's settings.json")
+        }
+
         Text("\(Branding.name) \(Branding.version)")
 
         Button("Quit") {
