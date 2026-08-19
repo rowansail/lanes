@@ -16,7 +16,8 @@
 #       ├── Info.plist          metadata: bundle id, version, LSUIElement, ...
 #       ├── MacOS/
 #       │   └── Lanes           the executable binary
-#       └── Resources/          icons, images, translations
+#       └── Resources/
+#           └── AppIcon.icns    the icon, built from Resources/AppIcon.png
 #
 # SwiftPM compiles the binary; this script wraps it in that folder structure,
 # because `swift build` produces a bare executable and macOS will not put a bare
@@ -61,6 +62,12 @@ done
 # CFBundleExecutable below.
 BIN_NAME="Lanes"
 MIN_MACOS="13.0"                   # MenuBarExtra exists from macOS 13 Ventura
+
+# The 1024x1024 master the .icns is rendered from. Checked in as a PNG rather than
+# as a finished .icns so that what the repository holds is the artwork, not a
+# container format only Apple tooling can open.
+ICON_SRC="Resources/AppIcon.png"
+ICON_NAME="AppIcon"
 
 APP="build/${APP_NAME}.app"
 
@@ -108,6 +115,40 @@ rm -rf "$APP"
 mkdir -p "$APP/Contents/MacOS" "$APP/Contents/Resources"
 cp "$BUILT_BIN" "$APP/Contents/MacOS/$BIN_NAME"
 
+# --- 3a. the icon -----------------------------------------------------------
+# macOS will not scale one big PNG for you: an .icns is a container holding the
+# artwork pre-rendered at every size the system asks for, from 16pt in a Finder
+# list to 512pt@2x in Quick Look. `iconutil` builds one from a folder of PNGs
+# with names it recognises — the @2x files are the Retina variants, so
+# icon_32x32@2x.png is 64 pixels of artwork shown at 32 points.
+#
+# Rendered here rather than checked in because a generated binary in the
+# repository is a copy that can silently fall out of step with the PNG beside it.
+# Both tools ship with the Command Line Tools, already required above.
+echo "==> rendering icon"
+if [[ ! -r "$ICON_SRC" ]]; then
+  echo "Cannot read $ICON_SRC — the app will get the generic icon." >&2
+else
+  ICONSET="build/${ICON_NAME}.iconset"
+  rm -rf "$ICONSET"
+  mkdir -p "$ICONSET"
+
+  # size:filename. Sizes repeat on purpose: 32 is both 32x32 and 16x16@2x, and
+  # macOS looks them up by name, so both files have to exist.
+  for entry in \
+    16:icon_16x16 32:icon_16x16@2x 32:icon_32x32 64:icon_32x32@2x \
+    128:icon_128x128 256:icon_128x128@2x 256:icon_256x256 512:icon_256x256@2x \
+    512:icon_512x512 1024:icon_512x512@2x
+  do
+    size="${entry%%:*}"
+    name="${entry##*:}"
+    sips -z "$size" "$size" "$ICON_SRC" --out "$ICONSET/${name}.png" >/dev/null
+  done
+
+  iconutil --convert icns "$ICONSET" --output "$APP/Contents/Resources/${ICON_NAME}.icns"
+  rm -rf "$ICONSET"
+fi
+
 # Info.plist is generated, not checked in, for the same reason the names above are
 # read from Branding.swift: a second copy of the version number is a second thing
 # to forget on release day.
@@ -132,6 +173,19 @@ cat > "$APP/Contents/Info.plist" <<PLIST
 
     <key>CFBundleIdentifier</key>
     <string>${BUNDLE_ID}</string>
+
+    <!--
+      Names Resources/AppIcon.icns, extension optional. Not CFBundleIconName:
+      that one resolves through a compiled asset catalog, which a bundle
+      assembled by hand does not have.
+
+      An agent app has no Dock icon, but the icon is not decoration — it is what
+      Lanes looks like in Finder, in Login Items, and in the "Lanes would like
+      to..." permission prompts, where a generic placeholder for an app that
+      edits your shell config is exactly the wrong impression.
+    -->
+    <key>CFBundleIconFile</key>
+    <string>${ICON_NAME}</string>
 
     <key>CFBundlePackageType</key>
     <string>APPL</string>
