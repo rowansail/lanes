@@ -1,44 +1,123 @@
 # Lanes
 
-![The Lanes menu bar item, reading "Work" with a keep-awake timer](docs/img/menubar-gh.png)
-
 Account lanes for Claude Code. Switch accounts from the macOS menu bar, and see at
 a glance which one you are in.
 
-*Not affiliated with, endorsed by, or sponsored by Anthropic. Claude is a trademark
-of Anthropic, PBC.*
+<!--
+  The twenty-second loop goes here, the moment docs/demo/record.sh has been used
+  to record one: the menu bar says Work, you cd into a pinned repo, run claude,
+  and it comes up on acme anyway. Uncomment the line below when the file exists —
+  docs/demo/README.md has the framing, the beats and the ffmpeg invocation.
+
+  ![Pinning a directory, then running claude in it and landing in that account](docs/img/demo.gif)
+-->
+
+https://github.com/user-attachments/assets/65b5cedc-76e6-4901-9194-02478c74735b
 
 Claude Code can only be logged into one account at a time. Lanes switches between
 them and keeps the active name permanently visible, because running the wrong
 account against a client's codebase is a bad afternoon.
 
-https://github.com/user-attachments/assets/65b5cedc-76e6-4901-9194-02478c74735b
+*Not affiliated with, endorsed by, or sponsored by Anthropic. Claude is a trademark
+of Anthropic, PBC.*
 
 ## Install
 
-macOS 13 or newer, and Xcode Command Line Tools (`xcode-select --install`).
+macOS 13 or newer.
+
+```bash
+brew install rowansail/tap/lanes
+```
+
+The formula compiles from the tagged source on your machine — there is no binary
+in it — then hands you one line to link the app into `/Applications`, which is the
+only place macOS offers Launch at Login from.
+
+Or clone it, which is the same build:
 
 ```bash
 git clone https://github.com/rowansail/lanes
 cd lanes
-./build.sh
+./build.sh                # compiles, signs ad-hoc, installs, launches
 ```
 
-Compiles, signs ad-hoc, installs into `/Applications` and launches. The app checks
-your setup shortly after and opens a wizard if anything needs doing — it can convert
-an existing Claude Code install into your first profile.
-
-Then, once per profile:
+Either way the app checks your setup shortly after launching and opens a wizard if
+anything needs doing — it can convert an existing Claude Code install into your
+first profile. Then, once per profile:
 
 ```bash
 exec zsh                # activate the hook in this terminal
 claude auth login
 ```
 
-There are no binary releases. The ad-hoc signature is enough for a Mac to trust an
-app you compiled yourself and not enough to hand someone a `.app` — and for a tool
-that edits your shell config, building it yourself means the code you audited is the
-code you ran.
+There are no binary releases and there is no cask. The ad-hoc signature is enough
+for a Mac to trust an app you compiled yourself and not enough to hand someone a
+`.app` — and for a tool that edits your shell config, building it yourself means
+the code you audited is the code you ran. Homebrew removes the four commands, not
+that guarantee. Xcode Command Line Tools (`xcode-select --install`) supply the
+compiler; the project has no dependencies, so nothing else is fetched.
+
+## Project pins
+
+A `.lanes` file holding a profile name pins that directory and everything under it.
+`claude` then runs against that profile **whatever is globally active**, because an
+explicit per-project statement should outrank a menu click from last Tuesday.
+
+```bash
+cd ~/projects/acme && lane lock acme
+```
+
+```
+~/projects/acme $ claude
+lanes: ~/projects/acme is pinned to 'acme' — using it for this command.
+```
+
+It is a file in the repository, not an entry in a registry on your laptop. Commit
+it and everyone who clones the repo is in the right account on their first run;
+add it to `.git/info/exclude` to keep it yours. `LANES_NO_LOCK=1` bypasses it.
+Pins do not apply in VS Code's native panel — see the `useTerminal` note below.
+
+## Keep Awake
+
+![The Lanes menu bar item, reading "Work" with a keep-awake timer](docs/img/menubar-gh.png)
+
+Menu → `Keep Awake` stops your Mac sleeping through a long run: a fixed duration,
+until you turn it off, or **while Claude Code is running** — which follows the
+`claude` process and lets go when it exits. A ☕ and a countdown appear in the menu
+bar while it is on.
+
+It is an IOKit power assertion, the same thing `caffeinate` uses, and it deliberately
+does not survive a restart.
+
+## How it compares
+
+The other tools in this space mostly swap credentials between accounts. Lanes
+never touches one.
+
+| | **Lanes** | [cc-switch](https://github.com/farion1231/cc-switch) | [CCSwitcher](https://github.com/XueshiQiao/CCSwitcher) | [claude-swap](https://github.com/realiti4/claude-swap) |
+|---|---|---|---|---|
+| **How it switches** | points `CLAUDE_CONFIG_DIR` at a separate config folder | rewrites the provider config | swaps the Keychain item and `~/.claude.json` | swaps the stored login in the OS credential store |
+| **Reads your token** | **never** | holds the API keys it manages | yes, and keeps its own encrypted backups | yes, reads and stores OAuth tokens |
+| **Per-project pin** | **a `.lanes` file you can commit** | – | – | yes, a directory→account map on your machine |
+| **Active account always on screen** | yes, in the menu bar | tray menu | yes, in the menu bar | optional menu bar app |
+| **Keep awake for long runs** | yes | – | – | – |
+| **Usage / rate-limit dashboard** | – | – | yes | yes, and auto-rotates at the limit |
+| **Third-party providers and relays** | – | yes, 50+ presets across 8 tools | – | – |
+| **Platform** | macOS 13+ | macOS, Windows, Linux | macOS 14+ | macOS, Linux, Windows |
+| **Ships as** | source you compile | signed binaries | signed DMG, auto-updates | Python package |
+| **Licence** | GPL-3.0-or-later | MIT | not stated | MIT |
+
+Read that as a shape, not a scoreboard. **Use something else** if you want one tool
+across Windows and Linux (`cc-switch`, `claude-swap`), if you are switching between
+API relays rather than between Anthropic accounts (`cc-switch`), if you want a live
+quota dashboard or automatic rotation when an account hits its limit (`claude-swap`,
+`CCSwitcher`), or if you would rather install a signed binary than compile one.
+
+What is only here: the pin is a file in the repo, so it travels with the project
+rather than living in one developer's config; and switching accounts never requires
+reading a secret, because pointing at a different folder makes Claude Code look up a
+different Keychain item on its own. [SECURITY.md](SECURITY.md) has the detail, and
+the reason that rule is not negotiable.
 
 ## How it works
 
@@ -84,30 +163,6 @@ lane lock [name]            # pin this directory to a profile
 lane unlock                 # remove the pin
 ```
 
-## Project pins
-
-A `.lanes` file holding a profile name pins that directory and everything under it.
-`claude` then runs against that profile whatever is globally active, because an
-explicit per-project statement should outrank a menu click from last Tuesday.
-
-```bash
-cd ~/projects/acme && lane lock acme
-```
-
-Commit it to share the pin, or add it to `.git/info/exclude` to keep it yours.
-`LANES_NO_LOCK=1` bypasses it. Pins do not apply in VS Code's native panel — see the
-`useTerminal` note above.
-
-## Keep Awake
-
-Menu → `Keep Awake` stops your Mac sleeping through a long run: a fixed duration,
-until you turn it off, or **while Claude Code is running** — which follows the
-`claude` process and lets go when it exits. A ☕ and a countdown appear in the menu
-bar while it is on.
-
-It is an IOKit power assertion, the same thing `caffeinate` uses, and it deliberately
-does not survive a restart.
-
 ## Skip Bypass Permissions Warning
 
 Claude Code records that you have read the Bypass Permissions warning per config
@@ -152,6 +207,9 @@ Claude Code and remove Lanes (a profile moves back to `~/.claude` intact), or re
 everything (profile folders go to the **Trash**, listed by name, with a final
 confirmation). Project pins are never touched.
 
+Then remove the app itself — `brew uninstall lanes` and `rm /Applications/Lanes.app`
+if you installed it that way, or drag it to the Trash if you did not.
+
 ## A standing caveat
 
 `CLAUDE_CONFIG_DIR` and the Keychain naming it implies are **undocumented** — derived
@@ -163,7 +221,8 @@ any release. If isolation stops working after an update, suspect that first.
 
 [GPL-3.0-or-later](LICENSE). Modified versions stay open under the same licence.
 [SECURITY.md](SECURITY.md) covers why the app never reads a credential;
-[CONTRIBUTING.md](CONTRIBUTING.md) covers building and testing.
+[CONTRIBUTING.md](CONTRIBUTING.md) covers building and testing;
+[CHANGELOG.md](CHANGELOG.md) covers what changed and when.
 
 Lanes is not affiliated with, endorsed by, or sponsored by Anthropic. "Claude" appears
 only as a descriptor of what the tool works with, and none of Anthropic's logos or

@@ -91,6 +91,37 @@ Bug reports are more useful with `./doctor.sh` output attached, and most useful 
 all when they include the Claude Code version — the behaviour this app relies on
 is undocumented and can change between releases.
 
+## Cutting a release
+
+The version lives in exactly one place — `Branding.version` — and `build.sh` reads
+that line into the Info.plist. Everything else follows from it.
+
+1. Bump `Branding.version`, add the section to `CHANGELOG.md`, and merge that.
+2. `swift test` and `./build.sh --no-install`, both green.
+3. Tag and push:
+
+   ```bash
+   git tag -a v1.2.3 -m "Lanes 1.2.3"
+   git push origin v1.2.3
+   ```
+
+   `.github/workflows/release.yml` publishes the GitHub release from the matching
+   `## 1.2.3` section of the changelog. It fails rather than publishing an empty
+   one, so a missing section is caught there and not by a reader.
+
+4. Update the Homebrew tap, which is a separate repository and does not follow the
+   tag on its own:
+
+   ```bash
+   packaging/homebrew/release.sh v1.2.3 ../homebrew-tap
+   ```
+
+   See `packaging/homebrew/README.md` for why the checksum cannot be committed here.
+
+Never move a tag that has been released. Homebrew pins the checksum of the tarball
+GitHub generates from it, and moving the tag changes that under everyone who has
+already installed.
+
 ## Licence
 
 Contributions are made under the GPL-3.0-or-later, the same licence as the

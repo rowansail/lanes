@@ -1,0 +1,56 @@
+name: Release
+
+# A tag on its own is invisible: it produces no release page, no changelog anyone
+# reads, and nothing for a feed or an aggregator to notice. This turns pushing
+# `v1.2.3` into the published release for it, with the notes taken from the
+# matching section of CHANGELOG.md so there is only ever one copy of them.
+on:
+  push:
+    tags:
+      - "v*"
+
+permissions:
+  contents: write          # the only scope needed to create a release
+
+jobs:
+  release:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+
+      # Not built or tested here. Lanes compiles against the macOS SDK, and a
+      # release is a pointer to a tag rather than an artefact — the only thing
+      # published is the source tarball GitHub generates from the tag itself.
+      - name: Take the notes for this tag out of CHANGELOG.md
+        id: notes
+        run: |
+          set -euo pipefail
+          version="${GITHUB_REF_NAME#v}"
+
+          # Everything from the "## <version>" heading up to the next "## ".
+          awk -v v="$version" '
+            $0 ~ "^## " v "( |$|\\.)" { inside = 1; next }
+            inside && /^## / { exit }
+            inside { print }
+          ' CHANGELOG.md > notes.md
+
+          # An empty file would publish a blank release, which is worse than a
+          # failed workflow: the tag is already pushed and the release is the
+          # thing people see.
+          if [ ! -s notes.md ]; then
+            echo "No '## $version' section in CHANGELOG.md." >&2
+            exit 1
+          fi
+
+          {
+            echo
+            echo "---"
+            echo
+            echo "Install: \`brew install rowansail/tap/lanes\`, or clone and run \`./build.sh\`."
+            echo "The formula and the script perform the same build; there are no binary releases."
+          } >> notes.md
+
+      - name: Publish
+        env:
+          GH_TOKEN: ${{ github.token }}
+        run: gh release create "$GITHUB_REF_NAME" --title "$GITHUB_REF_NAME" --notes-file notes.md
