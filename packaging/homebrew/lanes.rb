@@ -12,7 +12,7 @@
 class Lanes < Formula
   desc "Account lanes for Claude Code, in the macOS menu bar"
   homepage "https://github.com/rowansail/lanes"
-  url "https://github.com/rowansail/lanes/archive/refs/tags/v1.0.1.tar.gz"
+  url "https://github.com/rowansail/lanes/archive/refs/tags/v1.1.0.tar.gz"
   sha256 "0000000000000000000000000000000000000000000000000000000000000000"
   license "GPL-3.0-or-later"
   head "https://github.com/rowansail/lanes.git", branch: "main"
@@ -41,30 +41,46 @@ class Lanes < Formula
     system "./build.sh", "--no-install", "--disable-swiftpm-sandbox"
 
     # Homebrew formulae have no `app` stanza — that belongs to casks — so the
-    # bundle goes in the keg and the caveats hand over one line to symlink it.
+    # bundle goes in the keg, and `lanes` below is what links it into
+    # /Applications. It cannot be done here: Homebrew sandboxes both install and
+    # post_install, so a formula cannot write outside its own prefix. That is the
+    # sandbox working, not an obstacle — a package manager writing into
+    # /Applications behind your back is the thing it is there to prevent.
     prefix.install "build/Lanes.app"
+
+    # One word instead of an ln -sfn line to paste. The script is checked into the
+    # repository rather than written inline here, so it can be read before it is
+    # run — the same reason this is a formula and not a cask.
+    bin.install "packaging/homebrew/lanes-launcher.sh" => "lanes"
+    inreplace bin/"lanes", "@APP_BUNDLE@", "#{opt_prefix}/Lanes.app"
   end
 
   def caveats
     <<~EOS
-      Lanes is a menu bar app, and macOS only offers Launch at Login to apps in
-      /Applications. Link it there and start it:
+      Nothing is running yet, and Lanes is not in /Applications. One more command:
 
-        ln -sfn #{opt_prefix}/Lanes.app /Applications/Lanes.app
-        open /Applications/Lanes.app
+        lanes
 
-      The app checks your setup shortly after launching and opens a wizard if
-      anything needs doing — it can turn the Claude Code install you already have
-      into your first profile, and it installs the shell hook that defines `lane`.
+      It links the app into /Applications — where macOS wants it, because Launch
+      at Login is only offered to apps that live there — and opens it. Run it
+      again any time to bring the menu back up.
+
+      The app then checks your setup and opens a wizard if anything needs doing.
+      It can turn the Claude Code install you already have into your first
+      profile, and it installs the shell hook that defines `lane`.
 
       Then, once per profile:
 
         exec zsh                # activate the hook in this terminal
         claude auth login
 
-      Upgrades replace the bundle in place, so the symlink keeps working. Quit
-      Lanes from its menu before `brew upgrade` — a running app cannot be
-      overwritten.
+      Two commands, easily confused: `lanes` is this launcher and exists only for
+      Homebrew installs. `lane` is the shell function that switches accounts, and
+      comes from the hook.
+
+      Quit Lanes from its menu before `brew upgrade` — a running app cannot be
+      overwritten. `brew uninstall` leaves the /Applications symlink behind;
+      remove it with `rm /Applications/Lanes.app`.
     EOS
   end
 
@@ -83,5 +99,10 @@ class Lanes < Formula
     # Ad-hoc signature. Without it macOS treats each rebuild as a new unknown app
     # and re-asks for every permission.
     system "/usr/bin/codesign", "--verify", "--deep", app
+
+    # The launcher is useless if the substitution did not happen, and it fails in
+    # a way that looks like a broken install rather than a broken formula.
+    refute_match "@APP_BUNDLE@", (bin/"lanes").read
+    assert_match "#{opt_prefix}/Lanes.app", (bin/"lanes").read
   end
 end

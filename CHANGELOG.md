@@ -4,6 +4,24 @@ Notable changes, newest first. Versions follow [semantic versioning](https://sem
 and the version itself is defined once, in `Branding.version` — `build.sh` reads that
 line into the Info.plist, so there is no second copy to forget on release day.
 
+## 1.1.0 — 2026-08-30
+
+- `lanes` — a command a Homebrew install puts on `$PATH`. It links the app into
+  `/Applications` and opens it, replacing the `ln -sfn` line the caveats used to
+  ask you to paste. Run it again any time to bring the menu back up.
+
+  It exists because of a limit rather than a preference: Homebrew sandboxes both
+  the install and the post-install step, so a formula cannot write outside its own
+  prefix. A cask has an `app` stanza that does this automatically, and a cask
+  installs a binary somebody else compiled. `lanes` is the smallest thing that
+  closes the gap without giving that up.
+
+  It refuses to touch a real `/Applications/Lanes.app` — one that `./build.sh`
+  installed — and repoints its own symlink after an upgrade.
+
+- Not to be confused with `lane`, the shell function that switches accounts.
+  `lanes` only exists for Homebrew installs and only does the one thing.
+
 ## 1.0.1 — 2026-08-30
 
 Same-day fix. 1.0.0 could not be installed through Homebrew at all.

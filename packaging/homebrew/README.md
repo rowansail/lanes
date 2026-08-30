@@ -37,8 +37,8 @@ any repository named `homebrew-*` with a `Formula/` directory as a tap.
 From the root of this repository, with the tag already pushed:
 
 ```bash
-packaging/homebrew/release.sh v1.0.1 ../homebrew-tap
-cd ../homebrew-tap && git add Formula/lanes.rb && git commit -m "lanes 1.0.1" && git push
+packaging/homebrew/release.sh v1.1.0 ../homebrew-tap
+cd ../homebrew-tap && git add Formula/lanes.rb && git commit -m "lanes 1.1.0" && git push
 ```
 
 The second argument is a path to your tap checkout — relative to this repository's

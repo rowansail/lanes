@@ -27,11 +27,18 @@ macOS 13 or newer.
 
 ```bash
 brew install rowansail/tap/lanes
+lanes
 ```
 
 The formula compiles from the tagged source on your machine — there is no binary
-in it — then hands you one line to link the app into `/Applications`, which is the
-only place macOS offers Launch at Login from.
+in it. `lanes` then links the app into `/Applications`, which is the only place
+macOS offers Launch at Login from, and opens it.
+
+Two commands rather than one, and that is a real cost of shipping source. Homebrew
+sandboxes a formula so it cannot write outside its own prefix — that sandbox is the
+point of it — so the app cannot put itself in `/Applications` during install. A
+cask could, and a cask installs a binary someone else compiled. `lanes` is the
+smallest thing that closes the gap without giving that up.
 
 Or clone it, which is the same build:
 
@@ -155,6 +162,10 @@ pick up the current lane without relaunching anything.
 `lane` is a shell function defined by the same hook the wizard installs — nothing
 extra to install, and nothing on `$PATH`.
 
+(The one exception: a Homebrew install also puts `lanes`, plural, on `$PATH`. That
+is the launcher from the install step above and has nothing to do with switching
+accounts. `lane` is the one you want.)
+
 ```bash
 lane                        # active profile, the pin, and all profiles
 lane work                   # switch
@@ -207,8 +218,10 @@ Claude Code and remove Lanes (a profile moves back to `~/.claude` intact), or re
 everything (profile folders go to the **Trash**, listed by name, with a final
 confirmation). Project pins are never touched.
 
-Then remove the app itself — `brew uninstall lanes` and `rm /Applications/Lanes.app`
-if you installed it that way, or drag it to the Trash if you did not.
+Then remove the app itself. `brew uninstall lanes` if you installed it that way —
+followed by `rm /Applications/Lanes.app`, because that symlink was made by `lanes`
+rather than by Homebrew and is not Homebrew's to remove. Otherwise drag it to the
+Trash.
 
 ## A standing caveat
 

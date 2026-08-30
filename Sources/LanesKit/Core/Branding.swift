@@ -30,7 +30,7 @@ public enum Branding {
 
     /// Semantic version. `build.sh` reads this line to fill in the Info.plist, so this
     /// is the one place a release is numbered — there is no second copy to forget.
-    public static let version = "1.0.1"
+    public static let version = "1.1.0"
 
     /// Where to report a bug. Printed in the diagnostics report, because the single
     /// most useful thing a user can do when the undocumented behaviour this app relies

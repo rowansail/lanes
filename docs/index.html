@@ -338,11 +338,14 @@ Commit .lanes to share the pin, or add it to .git/info/exclude to keep it yours.
         build for you: a formula, not a cask, so it compiles from the tag on your
         machine rather than fetching a binary.
       </p>
-      <pre class="code"><code><span class="c">$</span> brew install rowansail/tap/lanes</code></pre>
+      <pre class="code"><code><span class="c">$</span> brew install rowansail/tap/lanes
+<span class="c">$</span> lanes</code></pre>
       <p class="section__note">
-        The formula leaves the app in Homebrew's prefix and gives you one
-        <code>ln -s</code> line to link it into <code>/Applications</code>, which is
-        the only place macOS offers Launch at Login from.
+        <code>lanes</code> links the app into <code>/Applications</code> — the only
+        place macOS offers Launch at Login from — and opens it. Two commands rather
+        than one because Homebrew sandboxes a formula so it cannot write outside its
+        own prefix, which is the point of the sandbox. A cask could, and a cask
+        installs a binary someone else compiled.
       </p>
       <p class="section__note">
         Or clone it, which is the same build: <code>build.sh</code> compiles it,
