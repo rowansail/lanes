@@ -12,7 +12,7 @@
 class Lanes < Formula
   desc "Account lanes for Claude Code, in the macOS menu bar"
   homepage "https://github.com/rowansail/lanes"
-  url "https://github.com/rowansail/lanes/archive/refs/tags/v1.0.0.tar.gz"
+  url "https://github.com/rowansail/lanes/archive/refs/tags/v1.0.1.tar.gz"
   sha256 "0000000000000000000000000000000000000000000000000000000000000000"
   license "GPL-3.0-or-later"
   head "https://github.com/rowansail/lanes.git", branch: "main"
@@ -30,7 +30,15 @@ class Lanes < Formula
     # --no-install stops build.sh after compiling and signing. Everything past
     # that point copies into /Applications and launches the app, which is not a
     # package manager's business and is blocked by the build sandbox anyway.
-    system "./build.sh", "--no-install"
+    #
+    # --disable-swiftpm-sandbox: SwiftPM sandboxes the evaluation of Package.swift
+    # with sandbox-exec, and macOS refuses to nest that inside the sandbox Homebrew
+    # has already put this build in — "sandbox_apply: Operation not permitted",
+    # reported as an invalid manifest. Homebrew's sandbox is the outer one and
+    # stays; this drops the redundant inner one. Nothing is loosened: the package
+    # has no dependencies and no plugins, so the only manifest being evaluated is
+    # the one inside the tarball whose checksum is pinned above.
+    system "./build.sh", "--no-install", "--disable-swiftpm-sandbox"
 
     # Homebrew formulae have no `app` stanza — that belongs to casks — so the
     # bundle goes in the keg and the caveats hand over one line to symlink it.

@@ -5,6 +5,9 @@
 #   ./build.sh                build + install + launch
 #   ./build.sh --no-install   build only, result in ./build/
 #
+#   --disable-swiftpm-sandbox drop SwiftPM's own sandbox, for callers that have
+#                             already sandboxed this script. See section 2.
+#
 # ---------------------------------------------------------------------------
 # What a Mac app actually is
 # ---------------------------------------------------------------------------
@@ -75,9 +78,19 @@ APP="build/${APP_NAME}.app"
 # as soon as that test fails — the last exit code of a && list is then 1. Classic
 # bash trap.
 INSTALL=true
-if [[ "${1:-}" == "--no-install" ]]; then
-  INSTALL=false
-fi
+SWIFTPM_SANDBOX=true
+
+for arg in "$@"; do
+  case "$arg" in
+    --no-install)              INSTALL=false ;;
+    --disable-swiftpm-sandbox) SWIFTPM_SANDBOX=false ;;
+    *)
+      echo "Unknown option: $arg" >&2
+      echo "Usage: $(basename "$0") [--no-install] [--disable-swiftpm-sandbox]" >&2
+      exit 1
+      ;;
+  esac
+done
 
 # --- 1. tooling -------------------------------------------------------------
 # xcrun finds the right toolchain for the installed Xcode / Command Line Tools.
@@ -101,10 +114,38 @@ ARCH="$(uname -m)"                 # arm64 on Apple Silicon, x86_64 on Intel
 # Built for this machine only. That is the right trade for a build-from-source
 # tool — every user compiles locally — and it avoids needing both SDKs for a
 # universal binary. For a universal build: --arch arm64 --arch x86_64.
-echo "==> compiling ($ARCH, macOS $MIN_MACOS minimum)"
-swift build -c release --product "$BIN_NAME"
+# SwiftPM compiles Package.swift in a sandbox of its own, via sandbox-exec, before
+# it builds anything. macOS does not let one sandbox-exec nest inside another, so
+# under a build system that has already sandboxed this script — Homebrew does —
+# that inner sandbox fails with "sandbox_apply: Operation not permitted" and the
+# manifest never compiles. The error names the manifest, not the sandbox, which is
+# a memorable half hour.
+#
+# --disable-swiftpm-sandbox drops the inner sandbox for that case. It is off by
+# default: for someone who cloned this repository and ran ./build.sh, SwiftPM's
+# sandbox costs nothing and is one more thing standing between a manifest and their
+# home directory. The Homebrew formula passes it, having supplied its own sandbox.
+#
+# A command-line flag rather than an environment variable, and that is the whole
+# point of it: a build system that scrubs the environment — which is exactly the
+# kind of build system that sandboxes you in the first place — can drop a variable
+# without saying so, and the failure then looks identical to not having fixed it at
+# all. An argument arrives or the script rejects it.
+#
+# Built as one array holding the whole command, rather than an array of extra flags,
+# for two reasons. It is never empty — macOS ships bash 3.2, where "${arr[@]}" on an
+# empty array is an unbound-variable error under `set -u`, the same family of trap
+# as the `&&` note further up. And --show-bin-path below re-evaluates the manifest,
+# so it needs identical flags; sharing one definition is how they stay identical.
+SWIFT_BUILD=(swift build -c release --product "$BIN_NAME")
+if ! $SWIFTPM_SANDBOX; then
+  SWIFT_BUILD+=(--disable-sandbox)
+fi
 
-BUILT_BIN="$(swift build -c release --product "$BIN_NAME" --show-bin-path)/$BIN_NAME"
+echo "==> compiling ($ARCH, macOS $MIN_MACOS minimum)"
+"${SWIFT_BUILD[@]}"
+
+BUILT_BIN="$("${SWIFT_BUILD[@]}" --show-bin-path)/$BIN_NAME"
 if [[ ! -x "$BUILT_BIN" ]]; then
   echo "Expected a binary at $BUILT_BIN but found none." >&2
   exit 1

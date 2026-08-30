@@ -21,6 +21,22 @@ jobs:
       # Not built or tested here. Lanes compiles against the macOS SDK, and a
       # release is a pointer to a tag rather than an artefact — the only thing
       # published is the source tarball GitHub generates from the tag itself.
+      # A tag pushed from a stale checkout points at a commit from before the
+      # release. Everything downstream then quietly describes the wrong code, so
+      # this fails the run instead. `packaging/homebrew/release.sh` refuses the
+      # same mismatch; this is the half that catches it before a release exists.
+      - name: Check the tag contains the version it claims
+        run: |
+          set -euo pipefail
+          version="${GITHUB_REF_NAME#v}"
+          declared="$(sed -n 's/.*static let version = "\(.*\)".*/\1/p' \
+                      Sources/LanesKit/Core/Branding.swift | head -1)"
+          if [ "$declared" != "$version" ]; then
+            echo "Tag $GITHUB_REF_NAME is on a commit declaring $declared, not $version." >&2
+            echo "Delete the tag, pull, and re-tag the commit that has the bump." >&2
+            exit 1
+          fi
+
       - name: Take the notes for this tag out of CHANGELOG.md
         id: notes
         run: |

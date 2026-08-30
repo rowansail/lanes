@@ -4,6 +4,34 @@ Notable changes, newest first. Versions follow [semantic versioning](https://sem
 and the version itself is defined once, in `Branding.version` — `build.sh` reads that
 line into the Info.plist, so there is no second copy to forget on release day.
 
+## 1.0.1 — 2026-08-30
+
+Same-day fix. 1.0.0 could not be installed through Homebrew at all.
+
+- `./build.sh` now takes `--disable-swiftpm-sandbox`, and the formula passes it.
+  SwiftPM evaluates `Package.swift` inside its own `sandbox-exec`, macOS refuses to
+  nest that inside Homebrew's, and the build died with `sandbox_apply: Operation not
+  permitted` — reported as an invalid manifest, which is what made it expensive to
+  read. A plain `./build.sh` keeps the sandbox it always had; only a caller that has
+  already sandboxed the script asks for it to be dropped.
+
+  A flag rather than an environment variable on purpose. A build system that scrubs
+  the environment is exactly the kind that sandboxes you, and a dropped variable
+  fails identically to not having fixed anything.
+
+- `build.sh` now parses all its arguments instead of looking only at `$1`, and
+  rejects unknown ones rather than ignoring them.
+
+- Releasing now checks that a tag contains the version it claims, in both
+  `packaging/homebrew/release.sh` and the release workflow. A tag pushed from a
+  stale checkout points at a commit from before the release, and every symptom
+  downstream then looks like the bug you thought you had just fixed. `Branding`
+  numbers a release exactly once, so comparing it against the tag name catches the
+  whole class.
+
+- No change to the app. A `1.0.0` build and a `1.0.1` build are the same program
+  with a different version string.
+
 ## 1.0.0 — 2026-08-30
 
 First tagged release. The app has been usable for a while; this is the point at which
